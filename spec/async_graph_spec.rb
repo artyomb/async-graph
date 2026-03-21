@@ -91,4 +91,156 @@ RSpec.describe AsyncGraph::Graph do
       expect(step.destinations.map(&:to)).to eq([:done])
     end
   end
+
+  it "validates that an entry point exists before execution" do
+    graph = described_class.new do
+      node :start do
+      end
+    end
+
+    expect do
+      graph.step(state: {}, node: :start)
+    end.to raise_error(AsyncGraph::ValidationError, /Entry point is not set/)
+  end
+
+  it "validates graph edges before execution" do
+    graph = described_class.new do
+      node :start do
+      end
+
+      set_entry_point :start
+      edge :start, :missing
+    end
+
+    expect do
+      graph.step(state: {}, node: graph.entry)
+    end.to raise_error(AsyncGraph::ValidationError, /Edge target missing is not defined/)
+  end
+
+  it "rejects duplicate node definitions" do
+    expect do
+      described_class.new do
+        node :start do
+        end
+
+        node :start do
+        end
+      end
+    end.to raise_error(AsyncGraph::ValidationError, /Node start is already defined/)
+  end
+
+  it "parks and releases join tokens inside the library" do
+    graph = described_class.new do
+      node :left do
+      end
+
+      node :right do
+      end
+
+      node :merge do
+      end
+
+      set_entry_point :left
+      edge %i[left right], :merge
+    end
+
+    parked = graph.process_join(
+      token: {
+        token_uid: "t1.left",
+        node: :merge,
+        state: {user_id: 7, left_ready: true},
+        fork_uid: "fork-1",
+        branch: :left,
+        from_node: :left,
+        awaits: {}
+      },
+      joins: {}
+    )
+
+    expect(parked).to be_a(AsyncGraph::JoinParked)
+    expect(parked.joins.keys).to eq([:'fork-1:merge'])
+
+    released = graph.process_join(
+      token: {
+        token_uid: "t1.right",
+        node: :merge,
+        state: {user_id: 7, right_ready: true},
+        fork_uid: "fork-1",
+        branch: :right,
+        from_node: :right,
+        awaits: {}
+      },
+      joins: parked.joins
+    )
+
+    aggregate_failures do
+      expect(released).to be_a(AsyncGraph::JoinReleased)
+      expect(released.joins).to eq({})
+      expect(released.token.fetch(:token_uid)).to eq("fork-1.join")
+      expect(released.token.fetch(:node)).to eq(:merge)
+      expect(released.token.fetch(:state)).to eq(
+        user_id: 7,
+        left_ready: true,
+        right_ready: true
+      )
+    end
+  end
+
+  it "raises when join branches disagree on the same state key" do
+    graph = described_class.new do
+      node :left do
+      end
+
+      node :right do
+      end
+
+      node :merge do
+      end
+
+      set_entry_point :left
+      edge %i[left right], :merge
+    end
+
+    parked = graph.process_join(
+      token: {
+        token_uid: "t1.left",
+        node: :merge,
+        state: {shared: 1},
+        fork_uid: "fork-1",
+        branch: :left,
+        from_node: :left,
+        awaits: {}
+      },
+      joins: {}
+    )
+
+    expect do
+      graph.process_join(
+        token: {
+          token_uid: "t1.right",
+          node: :merge,
+          state: {shared: 2},
+          fork_uid: "fork-1",
+          branch: :right,
+          from_node: :right,
+          awaits: {}
+        },
+        joins: parked.joins
+      )
+    end.to raise_error(AsyncGraph::JoinConflictError, /shared/)
+  end
+
+  it "validates explicit goto targets when commands are applied" do
+    graph = described_class.new do
+      node :start do
+        AsyncGraph::Command.goto(:missing)
+      end
+
+      set_entry_point :start
+    end
+
+    expect do
+      graph.step(state: {}, node: graph.entry)
+    end.to raise_error(AsyncGraph::ValidationError, /Goto target missing is not defined/)
+  end
 end

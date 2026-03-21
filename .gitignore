@@ -6,3 +6,5 @@
 /examples/*.json
 /*.gem
 /*.iml
+AGENTS.md
+**/.knowledge/

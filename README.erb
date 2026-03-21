@@ -5,8 +5,10 @@ store jobs outside the graph, and resume on later passes. It supports:
 
 - single-step graph execution
 - barrier joins such as `edge %i[left right], :merge`
+- library-owned join processing for persisted branch tokens
 - `await.call(...)` for one external job
 - `await.all(...)` for multiple parallel jobs in one node
+- graph validation before execution
 
 ## Installation
 
