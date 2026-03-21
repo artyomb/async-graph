@@ -17,7 +17,7 @@ gem install async-graph
 ## Example
 
 ```ruby
-require "async_graph"
+require 'async-graph'
 
 graph = AsyncGraph::Graph.new do
   node :fetch_user do |state, await|

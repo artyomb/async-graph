@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "lib/async_graph/version"
+require_relative "lib/async-graph/version"
 
 Gem::Specification.new do |spec|
   spec.name = "async-graph"
