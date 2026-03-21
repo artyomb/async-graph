@@ -1,0 +1,7 @@
+/.bundle/
+/pkg/
+/results/*
+!/results/.gitkeep
+/.idea/workspace.xml
+/examples/*.json
+/*.gem
