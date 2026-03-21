@@ -4,7 +4,7 @@ require "erb"
 require "fileutils"
 require "rspec/core/rake_task"
 require "rubocop/rake_task"
-require_relative "lib/async_graph/version"
+require_relative "lib/async-graph/version"
 
 RSpec::Core::RakeTask.new(:spec)
 RuboCop::RakeTask.new
