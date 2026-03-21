@@ -15,10 +15,24 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.4.4"
-      - run: |
+      - run: bundle install
+      - id: gem_version
+        name: Check published gem version
+        run: |
+          current="$(ruby -e 'require_relative "lib/async-graph/version"; print AsyncGraph::VERSION')"
+          latest="$(ruby -rjson -ropen-uri -e 'begin; print JSON.parse(URI.open("https://rubygems.org/api/v1/versions/async-graph/latest.json", &:read))["version"]; rescue StandardError; end')"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+      - name: Publish gem
+        if: steps.gem_version.outputs.current != steps.gem_version.outputs.latest
+        run: |
           mkdir -p ~/.gem && touch ~/.gem/credentials && chmod 0600 ~/.gem/credentials
           printf -- "---\n:rubygems_api_key: ${API_KEY}\n" > ~/.gem/credentials
-          bundle install
           bundle exec rake push
         env:
           API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+      - name: Skip published version
+        if: steps.gem_version.outputs.current == steps.gem_version.outputs.latest
+        run: echo "async-graph ${CURRENT_VERSION} is already published; skipping release."
+        env:
+          CURRENT_VERSION: ${{ steps.gem_version.outputs.current }}
