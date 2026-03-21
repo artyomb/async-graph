@@ -17,5 +17,15 @@ jobs:
           ruby-version: "3.4.4"
           bundler-cache: true
       - run: bundle exec rake
-      - run: bundle exec rubocop --display-cop-names --extra-details
+      - name: Run RuboCop
+        run: |
+          mkdir -p results
+          set -o pipefail
+          bundle exec rubocop --display-cop-names --extra-details 2>&1 | tee results/rubocop.log
+      - name: Upload RuboCop log
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: rubocop-log
+          path: results/rubocop.log
       - run: bash examples/run.sh
