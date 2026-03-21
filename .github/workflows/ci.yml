@@ -21,7 +21,9 @@ jobs:
         run: |
           mkdir -p results
           set -o pipefail
-          bundle exec rubocop --display-cop-names --extra-details --cache false 2>&1 | tee results/rubocop.log
+          git ls-files -z '*.rb' '*.gemspec' Gemfile Rakefile 'bin/*' \
+            | xargs -0 bundle exec rubocop --display-cop-names --extra-details --cache false --force-exclusion 2>&1 \
+            | tee results/rubocop.log
       - name: Upload RuboCop log
         if: failure()
         uses: actions/upload-artifact@v6
