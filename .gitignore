@@ -1,10 +1,11 @@
 /.bundle/
+.idea/
 /pkg/
 /results/*
 !/results/.gitkeep
 /.idea/workspace.xml
-.astro/
-.vscode/
+/docs-site/.astro
+/docs-site/.vscode
 /examples/*.json
 /*.gem
 /*.iml

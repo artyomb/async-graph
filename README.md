@@ -1,6 +1,7 @@
 # AsyncGraph
+Published docs: <https://artyomb.github.io/async-graph/>
 
-AsyncGraph is a small Ruby runtime for graph-style workflows that suspend on external work,
+AsyncGraph is a Ruby runtime for graph-style workflows that suspend on external work,
 store jobs outside the graph, and resume on later passes. It supports:
 
 - single-step graph execution
@@ -50,4 +51,14 @@ The repository includes a runnable example in `examples/`:
 
 ```bash
 bash examples/run.sh
+```
+
+## Documentation
+
+The repository also includes the Starlight source site in `docs-site/`.
+
+```bash
+cd docs-site
+npm install
+npm run dev
 ```
