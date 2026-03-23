@@ -1,0 +1,47 @@
+---
+title: AsyncGraph
+description: Suspended graph workflows for Ruby with explicit resume points, joins, and dynamic goto routing.
+template: splash
+hero:
+  tagline: Build graph-style Ruby workflows that can suspend on external work, resume later, join parallel branches, and route dynamically with goto.
+  actions:
+    - text: Get Started
+      link: /async-graph/getting-started/
+      icon: right-arrow
+    - text: View Source
+      link: https://github.com/artyomb/async-graph
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Why AsyncGraph?
+
+<CardGrid stagger>
+	<Card title="Minimal Runtime" icon="open-book">
+		Keep scheduling and persistence outside the gem while the runtime owns step execution,
+		await suspension, and barrier joins.
+	</Card>
+	<Card title="Suspend and Resume" icon="document">
+		Issue one request with `await.call(...)` or a batch with `await.all(...)`,
+		then resume the same node when results are available.
+	</Card>
+	<Card title="Branch and Join" icon="setting">
+		Fan out across multiple edges and let the runtime park branch state until a
+		barrier join can release a merged token.
+	</Card>
+	<Card title="Dynamic Goto" icon="right-arrow">
+		Override static edges at runtime with
+		[`AsyncGraph::Command.goto`](/async-graph/guides/goto/) and
+		[`update_and_goto`](/async-graph/guides/goto/).
+	</Card>
+</CardGrid>
+
+## Read Next
+
+- [Getting Started](/async-graph/getting-started/)
+- [Execution Model](/async-graph/guides/execution-model/)
+- [Await External Work](/async-graph/guides/await/)
+- [Barrier Joins](/async-graph/guides/joins/)
+- [Dynamic Goto](/async-graph/guides/goto/)
