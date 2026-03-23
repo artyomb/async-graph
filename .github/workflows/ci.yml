@@ -31,3 +31,17 @@ jobs:
           name: rubocop-log
           path: results/rubocop.log
       - run: bash examples/run.sh
+  docs:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs-site
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+      - run: npm ci
+      - run: npm run build
