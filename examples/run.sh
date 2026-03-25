@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-for file in app_graph.rb reset.rb graph_run.rb execute_jobs.rb; do
+for file in app_graph.rb reset.rb graph_run.rb execute_jobs.rb all_in_one_runner.rb; do
   ruby -c "$file"
 done
 
@@ -40,3 +40,6 @@ printf '\n== graph run 5 ==\n'
 ruby graph_run.rb
 cat graph_states.json
 cat jobs.json
+
+printf '\n== all-in-one runner ==\n'
+ruby all_in_one_runner.rb

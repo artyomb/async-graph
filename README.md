@@ -5,6 +5,7 @@ AsyncGraph is a Ruby runtime for graph-style workflows that suspend on external 
 store jobs outside the graph, and resume on later passes. It supports:
 
 - single-step graph execution
+- runner helpers for opaque persisted run state and fan-out/join bookkeeping
 - barrier joins such as `edge %i[left right], :merge`
 - library-owned join processing for persisted branch tokens
 - `await.call(...)` for one external job
@@ -45,12 +46,23 @@ resumed.state
 # => { user_id: 7, user: { id: 7, name: "Ada" } }
 ```
 
+For persisted multi-pass execution, `AsyncGraph::Runner` can create and advance a run
+snapshot while your application still owns persistence and external jobs.
+
 ## Demo
 
-The repository includes a runnable example in `examples/`:
+The repository includes two runnable examples in `examples/`:
+
+- persisted multi-pass flow with external job persistence:
 
 ```bash
 bash examples/run.sh
+```
+
+- self-contained runner loop with inline `:add` / `:subtract` request handling:
+
+```bash
+ruby examples/all_in_one_runner.rb
 ```
 
 ## Documentation

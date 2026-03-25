@@ -151,7 +151,7 @@ RSpec.describe AsyncGraph::Graph do
         state: {user_id: 7, left_ready: true},
         fork_uid: "fork-1",
         branch: :left,
-        from_node: :left,
+        source_node: :left,
         awaits: {}
       },
       joins: {}
@@ -167,7 +167,7 @@ RSpec.describe AsyncGraph::Graph do
         state: {user_id: 7, right_ready: true},
         fork_uid: "fork-1",
         branch: :right,
-        from_node: :right,
+        source_node: :right,
         awaits: {}
       },
       joins: parked.joins
@@ -208,7 +208,7 @@ RSpec.describe AsyncGraph::Graph do
         state: {shared: 1},
         fork_uid: "fork-1",
         branch: :left,
-        from_node: :left,
+        source_node: :left,
         awaits: {}
       },
       joins: {}
@@ -222,7 +222,7 @@ RSpec.describe AsyncGraph::Graph do
           state: {shared: 2},
           fork_uid: "fork-1",
           branch: :right,
-          from_node: :right,
+          source_node: :right,
           awaits: {}
         },
         joins: parked.joins

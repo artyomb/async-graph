@@ -216,8 +216,8 @@ module AsyncGraph
       fork_uid = token.fetch(:fork_uid)
       raise ValidationError, "Join token for #{current} is missing fork_uid" if fork_uid.nil? || fork_uid.to_s.empty?
 
-      source = token.fetch(:from_node)&.to_sym
-      raise ValidationError, "Join token for #{current} is missing from_node" unless source
+      source = token.fetch(:source_node)&.to_sym
+      raise ValidationError, "Join token for #{current} is missing source_node" unless source
 
       expects = join_for(current)
       unless expects.include?(source)
@@ -261,7 +261,7 @@ module AsyncGraph
           state: merge_join_states(states, expects, current),
           fork_uid: nil,
           branch: nil,
-          from_node: nil,
+          source_node: nil,
           awaits: {}
         },
         joins: current_joins

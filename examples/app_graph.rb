@@ -33,3 +33,5 @@ GRAPH = AsyncGraph::Graph.new do
   edge %i[left right], :merge
   set_finish_point :merge
 end
+
+RUNNER = AsyncGraph::Runner.new(GRAPH)

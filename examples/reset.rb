@@ -11,17 +11,11 @@ File.write(
     graphs: [
       {
         graph_uid: "graph-1",
-        status: "running",
-        tokens: [{token_uid: "t1", node: GRAPH.entry, state: {user_id: 7}, fork_uid: nil, branch: nil, from_node: nil, awaits: {}}],
-        joins: {},
-        result: nil
+        run: RUNNER.start_run(state: {user_id: 7}).to_h
       },
       {
         graph_uid: "graph-2",
-        status: "running",
-        tokens: [{token_uid: "t1", node: GRAPH.entry, state: {user_id: 8}, fork_uid: nil, branch: nil, from_node: nil, awaits: {}}],
-        joins: {},
-        result: nil
+        run: RUNNER.start_run(state: {user_id: 8}).to_h
       }
     ]
   ) + "\n"
