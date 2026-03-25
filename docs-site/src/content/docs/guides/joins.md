@@ -42,6 +42,12 @@ The runtime does not own token persistence, so your application calls:
 join_result = graph.process_join(token: token, joins: joins)
 ```
 
+If you use `AsyncGraph::Runner`, `runner.step(token:, joins:, ...)` wraps the same join
+parking and release flow for the default token hash shape.
+
+For most applications, prefer `runner.advance_run(run:, ...)`, which keeps join buckets
+inside the runner-managed run snapshot instead of exposing them in your persistence format.
+
 This returns:
 
 - `AsyncGraph::JoinParked` when not every expected branch has arrived yet
@@ -53,7 +59,7 @@ Join processing validates:
 
 - `token[:node]`: the join node
 - `token[:fork_uid]`: identifies the fork bucket
-- `token[:from_node]`: the branch source that reached the join
+- `token[:source_node]`: the branch source that reached the join
 - `token[:state]`: branch-local state to merge
 
 ## Conflict behavior
@@ -63,5 +69,5 @@ If two joined states disagree on the same key with different values, AsyncGraph 
 
 ## Important constraint
 
-Joining is source-sensitive. A token arriving at a join must report a `from_node` that
+Joining is source-sensitive. A token arriving at a join must report a `source_node` that
 matches one of the join's declared sources.

@@ -51,6 +51,6 @@ Good uses:
 - conditional approval flows
 - dynamic retries or fallback paths
 
-Avoid using `goto` as a shortcut into a barrier join unless the token's `from_node`
+Avoid using `goto` as a shortcut into a barrier join unless the token's `source_node`
 still matches one of the join's declared source nodes. Join processing validates that
 relationship.

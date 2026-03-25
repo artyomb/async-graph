@@ -5,6 +5,7 @@ description: Understand how AsyncGraph executes one logical step at a time.
 
 AsyncGraph advances one node at a time. The runtime does not schedule jobs or persist
 state by itself. Instead, it returns enough information for your application to do both.
+If you want the gem to manage persisted run state between passes, use `AsyncGraph::Runner`.
 
 ## Define nodes and edges
 
@@ -55,12 +56,18 @@ them in order. If a node has no outgoing edges, AsyncGraph implicitly routes it 
 
 ## External runner responsibilities
 
-Your application owns:
+Your application still owns:
 
 - state persistence between passes
 - external job dispatch and completion
-- token persistence when fan-out creates multiple in-flight branches
-- calling `process_join(...)` for barrier joins before re-entering the graph
+- providing resolved payloads for suspended await keys
+
+`AsyncGraph::Runner` can own:
+
+- persisted run snapshot creation
+- suspended token bookkeeping
+- fan-out token spawning
+- join parking and join release token handling
 
 See [Tokens and Joins](../reference/tokens-and-joins/) for the integration shape used by
-the example runner.
+custom runners. For the built-in helper, prefer `start_run(...)` and `advance_run(...)`.
