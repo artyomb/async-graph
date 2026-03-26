@@ -65,70 +65,26 @@ resumed.state
 
 ## Runner example
 
-If you want one self-contained example of the runner API, the repository includes
-[`examples/all_in_one_runner.rb`](https://github.com/artyomb/async-graph/blob/main/examples/all_in_one_runner.rb).
-It keeps request results in memory and resolves simple `:add` / `:subtract` operations
-inline:
+If you want runnable runner examples, the repository includes two variants:
+
+- [`examples/all_in_one_inline_runner.rb`](https://github.com/artyomb/async-graph/blob/main/examples/all_in_one_inline_runner.rb):
+  resolves simple `:add` / `:subtract` operations inline through `resolve_request:`
+- [`examples/all_in_one_jobs_runner.rb`](https://github.com/artyomb/async-graph/blob/main/examples/all_in_one_jobs_runner.rb):
+  uses normal suspension, binds requests to in-memory job IDs, and resumes in the same process
+
+Commands:
 
 ```bash
-ruby examples/all_in_one_runner.rb
+ruby examples/all_in_one_inline_runner.rb
+ruby examples/all_in_one_jobs_runner.rb
 ```
 
-Full example code:
-
-```ruby
-require "json"
-require "async-graph"
-
-runner = AsyncGraph::Runner.new(
-  AsyncGraph::Graph.new do
-    node :calculate do |state, await|
-      results = await.all(
-        added: [:add, {left: state[:left], right: state[:right]}],
-        subtracted: [:subtract, {left: state[:total], right: state[:discount]}]
-      )
-
-      {
-        added: results[:added],
-        subtracted: results[:subtracted],
-        answer: results[:added] - results[:subtracted]
-      }
-    end
-
-    set_entry_point :calculate
-    set_finish_point :calculate
-  end
-)
-
-results = {}
-run = runner.start_run(state: {left: 7, right: 5, total: 20, discount: 3})
-
-until run.finished?
-  run = runner.advance_run(
-    run: run,
-    resolved_for: lambda do |token|
-      token[:awaits].each_with_object({}) do |(key, request_id), memo|
-        memo[key.to_s] = results[request_id] if results.key?(request_id)
-      end
-    end
-  ) do |request|
-    results[request.key] =
-      case request.kind
-      when :add then request.payload[:left] + request.payload[:right]
-      when :subtract then request.payload[:left] - request.payload[:right]
-      end
-
-    request.key
-  end
-end
-```
-
-This is still a suspend/resume flow. The difference is only that the example resolves
-requests immediately inside the same process instead of persisting them to an external
-job system.
+The full code and a detailed explanation of both variants, plus the persisted multi-pass
+demo in `examples/run.sh`, are documented in [Example Walkthroughs](./guides/examples/).
 
 ## Read next
 
+- [Example Walkthroughs](./guides/examples/)
 - [Execution Model](./guides/execution-model/)
 - [Await External Work](./guides/await/)
 - [Barrier Joins](./guides/joins/)

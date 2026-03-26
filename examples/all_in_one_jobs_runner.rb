@@ -29,7 +29,7 @@ run = runner.start_run state: {left: 7, right: 5, total: 20, discount: 3}
 until run.finished?
   run = runner.advance_run(
     run: run,
-    resolved_for: lambda do |token|
+    resolved: lambda do |token|
       token[:awaits].each_with_object({}) do |(key, request_id), memo|
         memo[key.to_s] = results[request_id] if results.key?(request_id)
       end

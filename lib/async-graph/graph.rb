@@ -4,6 +4,7 @@ require_relative "graph_validation"
 
 module AsyncGraph
   FINISH = :__finish__
+  DEFER = Object.new.freeze
 
   Request = Struct.new(:key, :kind, :payload, keyword_init: true)
   Edge = Struct.new(:to, :branch, keyword_init: true)
@@ -48,15 +49,20 @@ module AsyncGraph
   # 2. Use await.all(...) inside one node to queue a batch and suspend once.
   # 3. Use a two-phase API such as await.defer + await.resolve_all.
   class Await
-    def initialize(resolved)
+    def initialize(resolved, resolve_request = nil)
       @resolved = resolved
+      @resolve_request = resolve_request
     end
 
     def call(key, kind, payload = {})
       key = key.to_s
       return @resolved[key] if @resolved.key?(key)
 
-      throw :await, AwaitSignal.new(requests: [Request.new(key:, kind:, payload:)])
+      request = Request.new(key:, kind:, payload:)
+      resolved = resolve(request)
+      throw :await, AwaitSignal.new(requests: [request]) if resolved.equal?(DEFER)
+
+      resolved
     end
 
     def all(definitions)
@@ -64,18 +70,37 @@ module AsyncGraph
         [key.to_s, [kind, payload || {}]]
       end
 
+      resolved = {}
       missing = normalized.filter_map do |key, (kind, payload)|
-        next if @resolved.key?(key)
+        if @resolved.key?(key)
+          resolved[key] = @resolved[key]
+          next
+        end
 
-        Request.new(key:, kind:, payload:)
+        request = Request.new(key:, kind:, payload:)
+        value = resolve(request)
+        if value.equal?(DEFER)
+          request
+        else
+          resolved[key] = value
+          nil
+        end
       end
 
       throw :await, AwaitSignal.new(requests: missing) unless missing.empty?
 
-      normalized.keys.to_h { |key| [key.to_sym, @resolved[key]] }
+      normalized.keys.to_h { |key| [key.to_sym, resolved[key]] }
     end
 
     def to_proc = method(:call).to_proc
+
+    private
+
+    def resolve(request)
+      return DEFER unless @resolve_request
+
+      @resolve_request.call(request.kind, request.payload)
+    end
   end
 
   class Graph
@@ -124,14 +149,14 @@ module AsyncGraph
 
     def set_finish_point(name) = edge(name, FINISH)
 
-    def step(state:, node:, resolved: {})
+    def step(state:, node:, resolved: {}, resolve_request: nil)
       validate!
 
       current = node.to_sym
       return Finished.new(state:) if current == FINISH
 
       validate_known_node!(current, context: "Step node")
-      await = Await.new(resolved)
+      await = Await.new(resolved, resolve_request)
       result = catch(:await) { [:ok, call_node(@nodes[current], state, await)] }
       return Suspended.new(state:, node: current, requests: result.requests) if result.is_a?(AwaitSignal)
 

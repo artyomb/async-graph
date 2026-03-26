@@ -34,7 +34,7 @@ step = graph.step(state: {}, node: graph.entry)
 
 | Result | Meaning |
 | --- | --- |
-| `AsyncGraph::Suspended` | The node called `await.call(...)` or `await.all(...)`. |
+| `AsyncGraph::Suspended` | The node still has deferred awaits after checking `resolved:` and optional `resolve_request:`. |
 | `AsyncGraph::Advanced` | The node completed and produced next destinations. |
 | `AsyncGraph::Finished` | The current node was `AsyncGraph::FINISH`. |
 

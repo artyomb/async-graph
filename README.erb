@@ -51,7 +51,7 @@ snapshot while your application still owns persistence and external jobs.
 
 ## Demo
 
-The repository includes two runnable examples in `examples/`:
+The repository includes three runnable examples in `examples/`:
 
 - persisted multi-pass flow with external job persistence:
 
@@ -59,10 +59,16 @@ The repository includes two runnable examples in `examples/`:
 bash examples/run.sh
 ```
 
-- self-contained runner loop with inline `:add` / `:subtract` request handling:
+- self-contained runner loop with inline `:add` / `:subtract` request handling through `resolve_request:`:
 
 ```bash
-ruby examples/all_in_one_runner.rb
+ruby examples/all_in_one_inline_runner.rb
+```
+
+- self-contained runner loop that still suspends, binds requests to in-memory job IDs, and resumes in the same process:
+
+```bash
+ruby examples/all_in_one_jobs_runner.rb
 ```
 
 ## Documentation

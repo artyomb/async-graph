@@ -7,7 +7,7 @@ def advance_graph_state!(graph_state, job_list, jobs_by_uid)
   graph_uid = graph_state.fetch(:graph_uid)
   next_run = RUNNER.advance_run(
     run: graph_state.fetch(:run),
-    resolved_for: lambda do |token|
+    resolved: lambda do |token|
       token.fetch(:awaits, {}).each_with_object({}) do |(key, job_uid), memo|
         job = jobs_by_uid[job_uid]
         memo[key.to_s] = job[:result] if job&.[](:status) == "done"

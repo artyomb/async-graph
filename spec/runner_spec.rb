@@ -168,6 +168,106 @@ RSpec.describe AsyncGraph::Runner do
     end
   end
 
+  it "finishes a run inline when resolve_request handles all awaits" do
+    graph = AsyncGraph::Graph.new do
+      node :calculate do |state, await|
+        results = await.all(
+          added: [:add, {left: state[:left], right: state[:right]}],
+          subtracted: [:subtract, {left: state[:total], right: state[:discount]}]
+        )
+
+        {
+          added: results[:added],
+          subtracted: results[:subtracted],
+          answer: results[:added] - results[:subtracted]
+        }
+      end
+
+      set_entry_point :calculate
+      set_finish_point :calculate
+    end
+
+    runner = described_class.new(graph)
+    run = runner.advance_run(
+      run: runner.start_run(state: {left: 7, right: 5, total: 20, discount: 3}),
+      resolve_request: lambda do |kind, payload|
+        case kind
+        when :add then payload[:left] + payload[:right]
+        when :subtract then payload[:left] - payload[:right]
+        else AsyncGraph::DEFER
+        end
+      end
+    )
+
+    aggregate_failures do
+      expect(run).to be_finished
+      expect(run.result).to eq(
+        left: 7,
+        right: 5,
+        total: 20,
+        discount: 3,
+        added: 12,
+        subtracted: 17,
+        answer: -5
+      )
+    end
+  end
+
+  it "binds only deferred requests when resolve_request handles part of await.all inline" do
+    graph = AsyncGraph::Graph.new do
+      node :calculate do |state, await|
+        results = await.all(
+          added: [:add, {left: state[:left], right: state[:right]}],
+          discounted: [:discount, {total: state[:total], amount: state[:discount]}]
+        )
+
+        {
+          added: results[:added],
+          discounted: results[:discounted]
+        }
+      end
+
+      set_entry_point :calculate
+      set_finish_point :calculate
+    end
+
+    resolve_request = lambda do |kind, payload|
+      case kind
+      when :add then payload[:left] + payload[:right]
+      else AsyncGraph::DEFER
+      end
+    end
+
+    runner = described_class.new(graph)
+    first = runner.advance_run(
+      run: runner.start_run(state: {left: 7, right: 5, total: 20, discount: 3}),
+      resolved: ->(_token) { nil },
+      resolve_request: resolve_request
+    ) { |request| "job-#{request.key}" }
+
+    finished = runner.advance_run(
+      run: first,
+      resolved: lambda do |token|
+        token[:awaits][:discounted] == "job-discounted" ? {"discounted" => 17} : {}
+      end,
+      resolve_request: resolve_request
+    )
+
+    aggregate_failures do
+      expect(first).to be_running
+      expect(first.tokens.first.fetch(:awaits)).to eq(discounted: "job-discounted")
+      expect(finished).to be_finished
+      expect(finished.result).to eq(
+        left: 7,
+        right: 5,
+        total: 20,
+        discount: 3,
+        added: 12,
+        discounted: 17
+      )
+    end
+  end
+
   it "reuses existing request bindings when a suspended token is retried" do
     graph = AsyncGraph::Graph.new do
       node :fetch do |state, await|

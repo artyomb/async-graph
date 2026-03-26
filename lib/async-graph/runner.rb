@@ -52,13 +52,14 @@ module AsyncGraph
       )
     end
 
-    def step(token:, joins:, resolved: {}, &)
+    def step(token:, joins:, resolved: {}, resolve_request: nil, &)
       return build_join_result(@graph.process_join(token:, joins:)) if join_token?(token)
 
       graph_step = @graph.step(
         state: token.fetch(:state),
         node: token.fetch(:node),
-        resolved: resolved
+        resolved: resolved,
+        resolve_request: resolve_request
       )
 
       case graph_step
@@ -73,13 +74,18 @@ module AsyncGraph
       end
     end
 
-    def advance_run(run:, resolved_for: nil, &)
+    def advance_run(run:, resolved: nil, resolved_for: nil, resolve_request: nil, &)
+      if resolved && resolved_for
+        raise ArgumentError, "Runner#advance_run accepts either resolved: or resolved_for:, not both"
+      end
+
       current_run = normalize_run(run)
       return current_run if current_run.finished?
 
       next_tokens, joins, final_state = advance_tokens(
         current_run,
-        resolved_for: resolved_for,
+        resolved_source: resolved || resolved_for,
+        resolve_request: resolve_request,
         &
       )
       Run.new(
@@ -226,7 +232,7 @@ module AsyncGraph
       raise ArgumentError, "Runner#step requires a block to bind external IDs for new requests"
     end
 
-    def advance_tokens(run, resolved_for:, &)
+    def advance_tokens(run, resolved_source:, resolve_request:, &)
       next_tokens = []
       joins = run.joins
       final_state = run.result
@@ -235,7 +241,8 @@ module AsyncGraph
         outcome = step(
           token: token,
           joins: joins,
-          resolved: resolved_for&.call(token) || {},
+          resolved: resolved_source&.call(token) || {},
+          resolve_request: resolve_request,
           &
         )
         joins = outcome.joins

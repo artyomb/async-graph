@@ -47,6 +47,96 @@ RSpec.describe AsyncGraph::Graph do
     end
   end
 
+  it "resolves await.call inline through resolve_request" do
+    graph = described_class.new do
+      node :calculate do |state, await|
+        sum = await.call(:sum, :add, left: state[:left], right: state[:right])
+        {sum: sum}
+      end
+
+      set_entry_point :calculate
+      set_finish_point :calculate
+    end
+
+    step = graph.step(
+      state: {left: 7, right: 5},
+      node: graph.entry,
+      resolve_request: lambda do |kind, payload|
+        case kind
+        when :add then payload[:left] + payload[:right]
+        else AsyncGraph::DEFER
+        end
+      end
+    )
+
+    aggregate_failures do
+      expect(step).to be_a(AsyncGraph::Advanced)
+      expect(step.state).to eq(left: 7, right: 5, sum: 12)
+      expect(step.destinations.map(&:to)).to eq([AsyncGraph::FINISH])
+    end
+  end
+
+  it "suspends await.all only for deferred requests" do
+    graph = described_class.new do
+      node :calculate do |state, await|
+        results = await.all(
+          added: [:add, {left: state[:left], right: state[:right]}],
+          discounted: [:discount, {total: state[:total], amount: state[:discount]}]
+        )
+
+        {
+          added: results[:added],
+          discounted: results[:discounted]
+        }
+      end
+
+      set_entry_point :calculate
+      set_finish_point :calculate
+    end
+
+    step = graph.step(
+      state: {left: 7, right: 5, total: 20, discount: 3},
+      node: graph.entry,
+      resolve_request: lambda do |kind, payload|
+        case kind
+        when :add then payload[:left] + payload[:right]
+        else AsyncGraph::DEFER
+        end
+      end
+    )
+
+    aggregate_failures do
+      expect(step).to be_a(AsyncGraph::Suspended)
+      expect(step.requests.map(&:key)).to eq(["discounted"])
+      expect(step.requests.map(&:kind)).to eq([:discount])
+    end
+
+    resumed = graph.step(
+      state: step.state,
+      node: step.node,
+      resolved: {"discounted" => 17},
+      resolve_request: lambda do |kind, payload|
+        case kind
+        when :add then payload[:left] + payload[:right]
+        else AsyncGraph::DEFER
+        end
+      end
+    )
+
+    aggregate_failures do
+      expect(resumed).to be_a(AsyncGraph::Advanced)
+      expect(resumed.state).to eq(
+        left: 7,
+        right: 5,
+        total: 20,
+        discount: 3,
+        added: 12,
+        discounted: 17
+      )
+      expect(resumed.destinations.map(&:to)).to eq([AsyncGraph::FINISH])
+    end
+  end
+
   it "builds a barrier edge from multiple sources" do
     graph = described_class.new do
       node :left do

@@ -15,7 +15,7 @@ Methods:
 - `edge(from, to, branch: nil)`: add a normal edge or a barrier join edge.
 - `set_entry_point(name)`: mark the first node.
 - `set_finish_point(name)`: route a node to `AsyncGraph::FINISH`.
-- `step(state:, node:, resolved: {})`: execute one logical step.
+- `step(state:, node:, resolved: {}, resolve_request: nil)`: execute one logical step.
 - `edges_from(node)`: inspect configured destinations.
 - `join?(node)`: check whether a node is a barrier join.
 - `join_for(node)`: return the source nodes expected by a join.
@@ -49,9 +49,9 @@ between passes while still keeping persistence and job execution outside the gem
 Methods:
 
 - `start_run(state:, token_uid: "t1")`: build a persisted run snapshot with runner-managed `tokens` and `joins`.
-- `advance_run(run:, resolved_for: nil) { |request| ... }`: advance one persisted run by one pass.
+- `advance_run(run:, resolved: nil, resolve_request: nil) { |request| ... }`: advance one persisted run by one pass.
 - `start(state:, token_uid: "t1")`: build an entry token for persisted execution.
-- `step(token:, joins:, resolved: {}) { |request| ... }`: low-level token step for custom runners.
+- `step(token:, joins:, resolved: {}, resolve_request: nil) { |request| ... }`: low-level token step for custom runners.
 
 ## Result objects
 
@@ -117,6 +117,7 @@ Fields:
 ## Constants and structs
 
 - `AsyncGraph::FINISH`
+- `AsyncGraph::DEFER`
 - `AsyncGraph::Request`
 - `AsyncGraph::Edge`
 - `AsyncGraph::AwaitSignal`
