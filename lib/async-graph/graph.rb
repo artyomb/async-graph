@@ -71,21 +71,7 @@ module AsyncGraph
       end
 
       resolved = {}
-      missing = normalized.filter_map do |key, (kind, payload)|
-        if @resolved.key?(key)
-          resolved[key] = @resolved[key]
-          next
-        end
-
-        request = Request.new(key:, kind:, payload:)
-        value = resolve(request)
-        if value.equal?(DEFER)
-          request
-        else
-          resolved[key] = value
-          nil
-        end
-      end
+      missing = normalized.filter_map { |key, request_data| resolve_all_entry(key, request_data, resolved) }
 
       throw :await, AwaitSignal.new(requests: missing) unless missing.empty?
 
@@ -100,6 +86,21 @@ module AsyncGraph
       return DEFER unless @resolve_request
 
       @resolve_request.call(request.kind, request.payload)
+    end
+
+    def resolve_all_entry(key, request_data, resolved)
+      kind, payload = request_data
+      if @resolved.key?(key)
+        resolved[key] = @resolved[key]
+        return nil
+      end
+
+      request = Request.new(key:, kind:, payload:)
+      value = resolve(request)
+      return request if value.equal?(DEFER)
+
+      resolved[key] = value
+      nil
     end
   end
 

@@ -241,7 +241,7 @@ RSpec.describe AsyncGraph::Runner do
     runner = described_class.new(graph)
     first = runner.advance_run(
       run: runner.start_run(state: {left: 7, right: 5, total: 20, discount: 3}),
-      resolved: ->(_token) { nil },
+      resolved: ->(*) {},
       resolve_request: resolve_request
     ) { |request| "job-#{request.key}" }
 
